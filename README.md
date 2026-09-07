@@ -8,6 +8,7 @@ This repository contains the source code and data accompanying the paper:
 
 * `notebooks/` — Jupyter notebooks containing the analyses.
 * `data/` — Data used and derived by the notebooks. Some data are included in the repository, other needs to be downloaded (see below).
+* `R/` — Code and data for the R code.
 
 ### Additional data
 
