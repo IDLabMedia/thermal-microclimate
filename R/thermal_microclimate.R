@@ -1,6 +1,10 @@
+##### Overview of R codes, scripts and packages used for the statistical analysis in Parmentier et al. – Ecological Informatics
+
+##### R packages and datasets
+
 # Load needed R packages:
 library(readxl)
-library(vegan) # For diversity() H
+library(vegan) # For calculating diversity indices: S, H
 library(ggplot2)
 library(glmmTMB)
 library(performance) # For model checks; check_collinearity, check_zeroinflation, etc.
@@ -9,12 +13,49 @@ library(dplyr)
 library(tidyr)
 
 # First load all needed datasets in R:
-My dataset<- read_excel(  here("data/my dataset.xlsx") #change “my dataset” in the name of the dataset
+My dataset<- read_excel(  here("data/my dataset.xlsx") #change “my dataset” in the name of the dataset (in blue)
 
-#################
-# Assessment of management effect on thermal power frequency
-#################
 
+##### Assessment of management effect on pollinator diversity
+# In the paper the following diversity indices were frequently used related to pollinator diversity: abundance (N), number of species (S), Shannon-diversity index (H)
+
+PolAlldiv<- PollAll2122
+PolAlldat<- PollAll2122dat
+
+#calculate S and H:
+PolAlldiv$S <- specnumber(PolAlldat)
+PolAlldiv$H <- diversity(PolAlldat)
+
+#run GLMM models:
+# Basic models 
+
+PolAllN<-glmmTMB(N~Site+(1|Year)+(1|Location), family=poisson() , data=PollAlldiv)
+summary(PolAllN)
+
+PolAllS<-glmmTMB(S~Site+(1|Year)+(1|Location), family=poisson() , data=PollAlldiv)
+summary(PolAllS)
+
+PolAllH<-glmmTMB(H~Site+(1|Year)+(1|Location), family= gaussian , data=PollAlldiv)
+summary(PolAllH)
+
+# Models including spatiotemporal mowing effects (mowzone and Timing):
+
+PolAllN <-glmmTMB(N~Site+Mowzone+Mowdate + (1|Year)+(1|Location), family=nbinom1 , data= PolAlldiv)
+summary(PolAllN)
+
+PolAllS <-glmmTMB(S~Site+Mowzone+Mowdate + (1|Year)+(1|Location), family=poisson , data= PolAlldiv)
+summary(PolAllS)
+
+PolAllH <-glmmTMB(H~Site+Mowzone+Mowdate +(1|Location), family=gaussian, data= PolAlldiv)
+summary(PolAllH)
+
+# Model checks:
+
+check_distribution(PolAllN)      # change N by S or H for different diversity models
+check_collinearity(PolAllN) 
+check_zeroinflation(PolAllN) 
+check_autocorrelation(PolAllN)
+Assessment of management effect on microclimate as DCT power frequency
 # Composing the datasets with thermal frequency bands (freq1, freq2, freq3), with needed model factors:
 
 Insect_freq_test1<-Power300_freq1
@@ -61,9 +102,9 @@ check_collinearity(Ins22xfreq1.x)
 check_dag(Ins22xfreq1.x)
 check_autocorrelation(Ins22xfreq1.x)
 
-#################
-# Assessment of microclimatic effects on insect diversity
-#################
+
+
+##### Assessment of microclimatic effects on insect diversity
 
 # Composing the different overlay datasets of pollinators in thermal patches (2x2, 4x4 and 8x8 m), with needed model factors:
 
@@ -145,12 +186,13 @@ check_zeroinflation(Ins22xfreq1.x)
 check_outliers(Ins22xfreq1.x)
 
 
-# Drawing plots to visualise effects, via GGplot:
+# Example of drawing plots to visualise effects, via GGplot:
 ggplot(data = insectxthermal2x2_LP, 
-  aes(x = freq2, y = H, color = Timing, fill = Timing)) +  # change” color = Part”/ ” fill = Part” to visualise different effects of mowing zones
+  aes(x = freq2, y = H, color = Timing, fill = Timing)) +  
+# change” color = Part”/ ” fill = Part” to visualise different effects of mowing zones
   geom_point(alpha = 0.4) +                           
   geom_smooth(method ="glm", se = TRUE, alpha = 0.15) + facet_wrap(~Site)
-theme_minimal() +  labs(title = "                   DCT Power frequency bands per pollinator abundance (N), 2x2m plots",    x = "N patch",    y = "frequency (DCT power)"
+theme_minimal() +  labs(title = " DCT Power frequency bands per pollinator abundance (N), 2x2m plots",    x = "N patch",    y = "frequency (DCT power)"
   )
 
 
